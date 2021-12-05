@@ -1,72 +1,47 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
 public class HitAndBlow {
-    private static int inputNumber;
-    private static int targetNumber;
     private static final Random RANDOM = new Random();
     private static final Scanner STDIN = new Scanner(System.in);
-    private static final int MAX_CHALLENGE_TIMES = 5;
     private static final int RANDOM_NUM_RANGE = 10;
     private static final int NUMBER_DIGIT = 4;
     private static final int CHALLENGE_COUNT_OF_START = 0;
-    private static final int HITANDBLOW_COUNT_OF_START = 0;
-    private static final int NUMBER_OF_COUNT = 2;
-    
+    private static final int HITANDBLOW_STARTCOUNT = 0;
+    private static final int HIT_COUNT_INDEX = 0;
+    private static final int BLOW_COUNT_INDEX = 1;
+    private static final int MAX_CHALLENGE_COUNT = 5;
+
     private static List<Integer> correctNumbers = new ArrayList<Integer>();
     private static List<Integer> inputNumbers = new ArrayList<Integer>();
 
     private static final String QUESTION_NUM_MESSAGE = "%d桁の数字を入力して下さい。";
-    private static final String RULE_MESSAGE = String.format("答えられるのは%d回までだよ。", MAX_CHALLENGE_TIMES);
+    private static final String HINT_MESSAGE = "ヒット：%d個、ブロー：%d個";
+    private static final String RESULT_MESSAGE = "おめでとう！%d回目で成功♪";
+    private static final String FINISH_MESSAGE = "残念。答えは%dでした";
 
-    
-    private static boolean testmode = true;
     public static void main(String[] args) {
-        if(testmode == true){
-            test();
-            return;
-        }
-        targetNumber = RANDOM.nextInt(RANDOM_NUM_RANGE);
-        System.out.println(targetNumber);
-        showFirstMessage();
-        int challengeTimesCounter = CHALLENGE_COUNT_OF_START;
-        while (!isCountOver(challengeTimesCounter)) {
-            showCountMessage(challengeTimesCounter);
-            receiveinputNumber();
-            if (isCorrect()) {
+        int challengeCount = CHALLENGE_COUNT_OF_START;
+        generateCorrectNumber();
+        while (!isCountOver(challengeCount)) {
+            challengeCount++;
+            playRound();
+            if (isCorrect(correctNumbers, inputNumbers)) {
+                showResultMessage(challengeCount);
                 break;
             }
-            showHintMessage();
-            challengeTimesCounter++;
         }
-        showResultMessage(challengeTimesCounter);
-        STDIN.close();
+        showFinishMessage(correctNumbers);
     }
 
-    private static void showResultMessage(int challengeTimesCounter) {
-        if (isCorrect()) {
-            System.out.println(String.format("すごい！！%d回で当てられちゃった！", challengeTimesCounter));
-            return;
-        }
-        System.out.println("残念！！ 正解は " + targetNumber + " でした！");
-    }
-
-    private static void showCountMessage(int challengeTimesCounter) {
-        System.out.println(String.format("%d回目", challengeTimesCounter));
-    }
-
-    private static void showFirstMessage() {
-        System.out.println(RULE_MESSAGE);
-    }
-
-    private static boolean isCountOver(int challengeTimesCounter) {
-        if (challengeTimesCounter <= MAX_CHALLENGE_TIMES) {
-            return false;
-        }
-        return true;
+    private static void playRound() {
+        System.out.println(correctNumbers);
+        int inputNumber = receiveinputNumber();
+        inputNumbers = numberParseToList(inputNumber);
+        int[] hitAndBlowCount = countHitAndBlow(correctNumbers, inputNumbers);
+        showHintMessage(hitAndBlowCount);
     }
 
     private static boolean isNumber(String inputStr) {
@@ -78,79 +53,79 @@ public class HitAndBlow {
         }
     }
 
-    private static boolean isCorrectDigit(String inputStr){
-        if(inputStr.length() == NUMBER_DIGIT){
+    private static boolean isCorrectDigit(String inputStr) {
+        if (inputStr.length() == NUMBER_DIGIT) {
             return true;
         }
         return false;
     }
 
-    private static boolean isCorrect() {
-        if (targetNumber == inputNumber) {
+    private static boolean isCorrect(List<Integer> correctNumbers, List<Integer> inputNumbers) {
+        int[] hitAndBlowCount = countHitAndBlow(correctNumbers, inputNumbers);
+        if (hitAndBlowCount[HIT_COUNT_INDEX] == NUMBER_DIGIT) {
             return true;
         }
         return false;
     }
 
-    private static boolean isTooBig() {
-        if (targetNumber >= inputNumber) {
+    private static boolean isContain(List<Integer> numbers, int number) {
+        return numbers.contains(number);
+    }
+
+    private static void showQuestionNumMessage() {
+        System.out.println(String.format(QUESTION_NUM_MESSAGE, NUMBER_DIGIT));
+    }
+
+    private static void showHintMessage(int[] hitAndBlowCount) {
+        System.out.println(
+                String.format(HINT_MESSAGE, hitAndBlowCount[HIT_COUNT_INDEX], hitAndBlowCount[BLOW_COUNT_INDEX]));
+    }
+
+    private static void showResultMessage(int count) {
+        System.out.println(String.format(RESULT_MESSAGE, count));
+    }
+
+    private static void showFinishMessage(List<Integer> correctNumbers) {
+        System.out.println(String.format(FINISH_MESSAGE, listParseToInt(correctNumbers)));
+    }
+
+    private static boolean isCountOver(int count) {
+        if (count < MAX_CHALLENGE_COUNT) {
             return false;
         }
         return true;
     }
 
-    private static void showHintMessage() {
-        if (isTooBig()) {
-            System.out.println("もっと小さい数字だよ");
-            return;
-        }
-        System.out.println("もっと大きい数字だよ");
-    }
-
-    private static boolean isContain(List<Integer> numbers,int number){
-        return numbers.contains(number);
-    }
-
-    private static void showQuestionNumMessage() {
-        System.out.println(String.format(QUESTION_NUM_MESSAGE,NUMBER_DIGIT));
-    }
-
-    private static void test(){
-        System.out.println("テストモードです");
-        generateCorrectNumebr();
-        /*for(int s : correctNumbers){
-            System.out.print(s);
-        }*/
-        System.out.println("correctNumbers"+correctNumbers);
-        int inputNumber = receiveinputNumber();
-        System.out.println("correctNumbers"+correctNumbers+"　inputNumbers"+inputNumbers);
-        inputNumbers = numberParseToList(inputNumber);
-        int[] hitAndBlowCount = countHitAndBlow(correctNumbers,inputNumbers);
-        System.out.println("ヒット"+hitAndBlowCount[0]+"　ブロー"+hitAndBlowCount[1]);
-    }
-
-    private static List<Integer> numberParseToList(int numbers){
+    private static List<Integer> numberParseToList(int numbers) {
         String format = "%0" + String.valueOf(NUMBER_DIGIT) + "d";
-        String numberStr = String.format(format,numbers);
+        String numberStr = String.format(format, numbers);
         List<Integer> inputNumbers = new ArrayList<Integer>();
-        for(int i=0;i<NUMBER_DIGIT;i++){
+        for (int i = 0; i < NUMBER_DIGIT; i++) {
             char number = numberStr.charAt(i);
             inputNumbers.add(Character.getNumericValue(number));
         }
         return inputNumbers;
     }
 
-    private static int generateRandomNumber(int NUMRANGE){
+    private static int listParseToInt(List<Integer> intList) {
+        StringBuilder sb = new StringBuilder();
+        for (int number : intList) {
+            sb.append(number);
+        }
+        return Integer.valueOf(sb.toString());
+    }
+
+    private static int generateRandomNumber(int NUMRANGE) {
         int number = RANDOM.nextInt(RANDOM_NUM_RANGE);
-        if(isContain(correctNumbers,number)){
+        if (isContain(correctNumbers, number)) {
             number = generateRandomNumber(NUMRANGE);
         }
         return number;
     }
 
-    private static void generateCorrectNumebr(){
-        for(int i = 0; i < NUMBER_DIGIT; i++){
-            correctNumbers.add(i,generateRandomNumber(RANDOM_NUM_RANGE));
+    private static void generateCorrectNumber() {
+        for (int i = 0; i < NUMBER_DIGIT; i++) {
+            correctNumbers.add(i, generateRandomNumber(RANDOM_NUM_RANGE));
         }
     }
 
@@ -159,7 +134,7 @@ public class HitAndBlow {
         int inputNumber;
         showQuestionNumMessage();
         inputStr = STDIN.nextLine();
-        if(!isNumber(inputStr) || !isCorrectDigit(inputStr)){
+        if (!isNumber(inputStr) || !isCorrectDigit(inputStr)) {
             inputNumber = receiveinputNumber();
             return inputNumber;
         }
@@ -167,30 +142,30 @@ public class HitAndBlow {
         return inputNumber;
     }
 
-    private static int[] countHitAndBlow(List<Integer> correctNumbers,List<Integer> inputNumbers){
-        int hit = HITANDBLOW_COUNT_OF_START;
-        int blow = HITANDBLOW_COUNT_OF_START;
-        for(int i=0;i<NUMBER_DIGIT;i++){
-            if(isHit(i,correctNumbers,inputNumbers)){
+    private static int[] countHitAndBlow(List<Integer> correctNumbers, List<Integer> inputNumbers) {
+        int hit = HITANDBLOW_STARTCOUNT;
+        int blow = HITANDBLOW_STARTCOUNT;
+        for (int i = 0; i < NUMBER_DIGIT; i++) {
+            if (isHit(i, correctNumbers, inputNumbers)) {
                 hit++;
             }
         }
-        blow = countBlow(hit,correctNumbers,inputNumbers);
-        int[] hitAndBlowCount = {hit,blow};
+        blow = countBlow(hit, correctNumbers, inputNumbers);
+        int[] hitAndBlowCount = { hit, blow };
         return hitAndBlowCount;
     }
 
-    private static boolean isHit(int index,List<Integer> correctNumbers,List<Integer> inputNumbers){
-        if(correctNumbers.get(index) == (inputNumbers.get(index))){
+    private static boolean isHit(int index, List<Integer> correctNumbers, List<Integer> inputNumbers) {
+        if (correctNumbers.get(index) == (inputNumbers.get(index))) {
             return true;
         }
         return false;
     }
 
-    private static int countBlow(int hitCount,List<Integer> correctNumbers,List<Integer> inputNumbers){
+    private static int countBlow(int hitCount, List<Integer> correctNumbers, List<Integer> inputNumbers) {
         int containCount = 0;
-        for(int inputNumber : inputNumbers){
-            if(isContain(correctNumbers,inputNumber)){
+        for (int inputNumber : inputNumbers) {
+            if (isContain(correctNumbers, inputNumber)) {
                 containCount++;
             }
         }
