@@ -7,20 +7,29 @@ public class HitAndBlow {
     private static final Random RANDOM = new Random();
     private static final Scanner STDIN = new Scanner(System.in);
     private static final int RANDOM_NUM_RANGE = 10;
-    private static final int NUMBER_DIGIT = 4;
+    private static final int NUMBER_DIGIT = 5;
     private static final int CHALLENGE_COUNT_OF_START = 0;
     private static final int HITANDBLOW_STARTCOUNT = 0;
     private static final int HIT_COUNT_INDEX = 0;
     private static final int BLOW_COUNT_INDEX = 1;
-    private static final int MAX_CHALLENGE_COUNT = 5;
+    private static final int MAX_CHALLENGE_COUNT = 20;
+    private static final int ROUND_OF_HINT = 3;
+    private static List<Integer> HINT_ROUNDS = new ArrayList<>() {
+        {
+            for (int i = 0; i < NUMBER_DIGIT; i++) {
+                add(ROUND_OF_HINT * i);
+            }
+        }
+    };
 
-    private static List<Integer> correctNumbers = new ArrayList<Integer>();
-    private static List<Integer> inputNumbers = new ArrayList<Integer>();
+    private static List<Integer> correctNumbers = new ArrayList<>();
+    private static List<Integer> inputNumbers = new ArrayList<>();
 
     private static final String QUESTION_NUM_MESSAGE = "%d桁の数字を入力して下さい。";
-    private static final String HINT_MESSAGE = "ヒット：%d個、ブロー：%d個";
+    private static final String POINT_MESSAGE = "ヒット：%d個、ブロー：%d個";
     private static final String RESULT_MESSAGE = "おめでとう！%d回目で成功♪";
     private static final String FINISH_MESSAGE = "残念。答えは%dでした";
+    private static final String HINT_MESSAGE = "%dつ目の数字は%dだよ";
 
     public static void main(String[] args) {
         int challengeCount = CHALLENGE_COUNT_OF_START;
@@ -32,16 +41,18 @@ public class HitAndBlow {
                 showResultMessage(challengeCount);
                 break;
             }
+            if (isHintRound(challengeCount)) {
+                showHintMessage(challengeCount);
+            }
         }
         showFinishMessage(correctNumbers);
     }
 
     private static void playRound() {
-        System.out.println(correctNumbers);
-        int inputNumber = receiveinputNumber();
+        int inputNumber = receiveInputNumber();
         inputNumbers = numberParseToList(inputNumber);
         int[] hitAndBlowCount = countHitAndBlow(correctNumbers, inputNumbers);
-        showHintMessage(hitAndBlowCount);
+        showPointMessage(hitAndBlowCount);
     }
 
     private static boolean isNumber(String inputStr) {
@@ -54,18 +65,12 @@ public class HitAndBlow {
     }
 
     private static boolean isCorrectDigit(String inputStr) {
-        if (inputStr.length() == NUMBER_DIGIT) {
-            return true;
-        }
-        return false;
+        return inputStr.length() == NUMBER_DIGIT;
     }
 
     private static boolean isCorrect(List<Integer> correctNumbers, List<Integer> inputNumbers) {
         int[] hitAndBlowCount = countHitAndBlow(correctNumbers, inputNumbers);
-        if (hitAndBlowCount[HIT_COUNT_INDEX] == NUMBER_DIGIT) {
-            return true;
-        }
-        return false;
+        return hitAndBlowCount[HIT_COUNT_INDEX] == NUMBER_DIGIT;
     }
 
     private static boolean isContain(List<Integer> numbers, int number) {
@@ -76,9 +81,10 @@ public class HitAndBlow {
         System.out.println(String.format(QUESTION_NUM_MESSAGE, NUMBER_DIGIT));
     }
 
-    private static void showHintMessage(int[] hitAndBlowCount) {
+    private static void showPointMessage(int[] hitAndBlowCount) {
         System.out.println(
-                String.format(HINT_MESSAGE, hitAndBlowCount[HIT_COUNT_INDEX], hitAndBlowCount[BLOW_COUNT_INDEX]));
+                String.format(POINT_MESSAGE, hitAndBlowCount[HIT_COUNT_INDEX],
+                        hitAndBlowCount[BLOW_COUNT_INDEX]));
     }
 
     private static void showResultMessage(int count) {
@@ -90,10 +96,7 @@ public class HitAndBlow {
     }
 
     private static boolean isCountOver(int count) {
-        if (count < MAX_CHALLENGE_COUNT) {
-            return false;
-        }
-        return true;
+        return !(count < MAX_CHALLENGE_COUNT);
     }
 
     private static List<Integer> numberParseToList(int numbers) {
@@ -129,13 +132,13 @@ public class HitAndBlow {
         }
     }
 
-    private static int receiveinputNumber() {
+    private static int receiveInputNumber() {
         String inputStr;
         int inputNumber;
         showQuestionNumMessage();
         inputStr = STDIN.nextLine();
         if (!isNumber(inputStr) || !isCorrectDigit(inputStr)) {
-            inputNumber = receiveinputNumber();
+            inputNumber = receiveInputNumber();
             return inputNumber;
         }
         inputNumber = Integer.parseInt(inputStr);
@@ -148,28 +151,32 @@ public class HitAndBlow {
         for (int i = 0; i < NUMBER_DIGIT; i++) {
             if (isHit(i, correctNumbers, inputNumbers)) {
                 hit++;
+            } else if (isBlow(i, correctNumbers, inputNumbers)) {
+                blow++;
             }
         }
-        blow = countBlow(hit, correctNumbers, inputNumbers);
         int[] hitAndBlowCount = { hit, blow };
         return hitAndBlowCount;
     }
 
     private static boolean isHit(int index, List<Integer> correctNumbers, List<Integer> inputNumbers) {
-        if (correctNumbers.get(index) == (inputNumbers.get(index))) {
-            return true;
-        }
-        return false;
+        return correctNumbers.get(index) == (inputNumbers.get(index));
     }
 
-    private static int countBlow(int hitCount, List<Integer> correctNumbers, List<Integer> inputNumbers) {
-        int containCount = 0;
-        for (int inputNumber : inputNumbers) {
-            if (isContain(correctNumbers, inputNumber)) {
-                containCount++;
-            }
+    private static boolean isBlow(int index, List<Integer> correctNumbers, List<Integer> inputNumbers) {
+        if (isHit(index, correctNumbers, inputNumbers)) {
+            return false;
         }
-        return containCount - hitCount;
+        return isContain(correctNumbers, inputNumbers.get(index));
+    }
+
+    private static boolean isHintRound(int challengeCount) {
+        return HINT_ROUNDS.contains(challengeCount);
+    }
+
+    private static void showHintMessage(int challengeCount) {
+        int hintDigit = HINT_ROUNDS.indexOf(challengeCount);
+        System.out.println(String.format(HINT_MESSAGE, hintDigit, correctNumbers.get(hintDigit - 1)));
     }
 
 }
